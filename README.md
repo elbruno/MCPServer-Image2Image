@@ -2,7 +2,7 @@
 
 This repository contains a simple MCP-based Image2Image server (`mcp_server.py`) that exposes an `image2image` tool. The tool wraps a Foundry/OpenAI-style images edit endpoint. The repository also includes scripts to create and activate a virtual environment.
 
-## Quick start (Windows PowerShell)
+## Quick Start
 
 1. Create and activate the virtual environment (if not already created):
 
@@ -10,6 +10,8 @@ This repository contains a simple MCP-based Image2Image server (`mcp_server.py`)
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
+
+Note: there are scripts in the `scripts/` directory to activate the virtual environment for different shells. This is the Powershell sample.
 
 2. Install the project's requirements:
 
@@ -36,6 +38,24 @@ mcp start .\mcp_server.py -t sse
 ```
 
 This will start an MCP server that listens for MCP client connections. You can adjust the transport (`-t`) and host/port as needed. Below is an example `mcp.json` (editor integration) and a sample prompt for testing.
+
+5. Add the mcp server to your favourite tool.
+
+6. Attach and image, and you can use these prompts as references to trigger the image2image tool.
+
+Below are example prompts you can use when invoking the `image2image` tool. They assume you attach an input image (for example `02-bruno.jpg`) and request a transform.
+
+- Anime (90s) - Use this to get a cel-shaded, dramatic anime look:
+
+```text
+Use the attached image and create a new one with a format like an anime from the 90s: bright cel-shaded colors, dramatic rim lighting, halftone accents, slightly exaggerated facial features, and subtle film grain; keep the subject's pose and expression recognizable.
+```
+
+- Mountain running (flux) - Photorealistic action composite using the `flux` model:
+
+```text
+Generate a new image that uses the attached image and makes the person in the image to be running in the mountains, use the flux model for this.
+```
 
 ## Troubleshooting
 
@@ -69,20 +89,4 @@ If your editor integrates with MCP, use an `mcp.json` file like the example belo
     },
     "inputs": []
 }
-```
-
-### Sample prompts (Quick start)
-
-Below are example prompts you can use when invoking the `image2image` tool. They assume you attach an input image (for example `02-bruno.jpg`) and request a transform.
-
-- Anime (90s) - Use this to get a cel-shaded, dramatic anime look:
-
-```text
-Use the attached image and create a new one with a format like an anime from the 90s: bright cel-shaded colors, dramatic rim lighting, halftone accents, slightly exaggerated facial features, and subtle film grain; keep the subject's pose and expression recognizable.
-```
-
-- Mountain running (flux) - Photorealistic action composite using the `flux` model:
-
-```text
-Generate a new image that uses the attached image and makes the person in the image to be running in the mountains, use the flux model for this.
 ```
