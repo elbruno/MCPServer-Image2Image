@@ -209,5 +209,11 @@ __marimo__/
 # Ignore generated images/artifacts directory (local outputs)
 generated/
 
+# Ignore runtime job files (local asynchronous job metadata)
+jobs/
+
+# If you want to keep the folder in the repo but not its contents, add a placeholder file (e.g. jobs/.gitkeep) and then uncomment the following:
+#!jobs/.gitkeep
+
 # Explicitly include the .vscode/mcp.json config file so it stays in the repo
 !.vscode/mcp.json
