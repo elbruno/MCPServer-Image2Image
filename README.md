@@ -71,8 +71,18 @@ If your editor integrates with MCP, use an `mcp.json` file like the example belo
 }
 ```
 
-Sample prompt you can use when calling the tool:
+### Sample prompts (Quick start)
+
+Below are example prompts you can use when invoking the `image2image` tool. They assume you attach an input image (for example `02-bruno.jpg`) and request a transform.
+
+- Anime (90s) - Use this to get a cel-shaded, dramatic anime look:
 
 ```text
 Use the attached image and create a new one with a format like an anime from the 90s: bright cel-shaded colors, dramatic rim lighting, halftone accents, slightly exaggerated facial features, and subtle film grain; keep the subject's pose and expression recognizable.
+```
+
+- Mountain running (flux) - Photorealistic action composite using the `flux` model:
+
+```text
+Generate a new image that uses the attached image and makes the person in the image to be running in the mountains, use the flux model for this.
 ```
