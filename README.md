@@ -27,38 +27,15 @@ FLUX_DEPLOYMENT_NAME=<flux_deployment>
 GPT_DEPLOYMENT_NAME=<gpt_deployment>
 ```
 
-4. Run the MCP server (this exposes the `image2image` tool):
+4. Start the MCP server (this exposes the `image2image` tool):
+
+You can start the server using the `mcp` CLI. Example (Server-Sent Events transport):
 
 ```powershell
-.\.venv\Scripts\python.exe mcp_server.py
+mcp start .\mcp_server.py -t sse
 ```
 
-The MCP server will start and listen for MCP client connections. By default `mcp.run()` will start an interactive MCP server (see MCP docs for client steps).
-
-## Quick test (direct call without starting server)
-
-If you want to test the `image2image` logic without running the MCP service, you can call the `image2image` function directly from a Python REPL or small script. Example:
-
-```python
-from mcp_server import image2image
-
-# Call using a file path already on disk
-print(image2image(image_path='02-bruno.jpg'))
-```
-
-or call with a base64 payload:
-
-```python
-from pathlib import Path
-import base64
-
-data = Path('02-bruno.jpg').read_bytes()
-b64 = 'data:image/jpeg;base64,' + base64.b64encode(data).decode()
-from mcp_server import image2image
-print(image2image(image_base64=b64))
-```
-
-Note: the `image2image` tool will call the configured Foundry endpoint and requires valid endpoint and API key values.
+This will start an MCP server that listens for MCP client connections. You can adjust the transport (`-t`) and host/port as needed. Below is an example `mcp.json` (editor integration) and a sample prompt for testing.
 
 ## Troubleshooting
 
@@ -78,27 +55,19 @@ Note: the `image2image` tool will call the configured Foundry endpoint and requi
 
 If you'd like, I can add a small client script to demonstrate connecting to the MCP server and invoking the `image2image` tool.
 
-## VS Code / MCP run samples
+## Editor integration / mcp.json example
 
-Run the MCP server (example):
-
-```powershell
-mcp run .\mcp_server.py -t sse
-```
-
-This runs the server with the Server-Sent Events transport. You can also start with other transports supported by `mcp run`.
-
-Example `.vscode/mcp.json` configuration (used by some editor integrations):
+If your editor integrates with MCP, use an `mcp.json` file like the example below. It matches the Server-Sent Events transport shown above:
 
 ```json
 {
- "servers": {
-  "image2imagelabs": {
-   "url": "http://0.0.0.0:8000/sse",
-   "type": "http"
-  }
- },
- "inputs": []
+    "servers": {
+        "image2imagelabs": {
+            "url": "http://0.0.0.0:8000/sse",
+            "type": "http"
+        }
+    },
+    "inputs": []
 }
 ```
 
