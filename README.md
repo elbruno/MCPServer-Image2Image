@@ -77,3 +77,33 @@ Note: the `image2image` tool will call the configured Foundry endpoint and requi
 - `scripts/` - helper venv activation scripts for different shells
 
 If you'd like, I can add a small client script to demonstrate connecting to the MCP server and invoking the `image2image` tool.
+
+## VS Code / MCP run samples
+
+Run the MCP server (example):
+
+```powershell
+mcp run .\mcp_server.py -t sse
+```
+
+This runs the server with the Server-Sent Events transport. You can also start with other transports supported by `mcp run`.
+
+Example `.vscode/mcp.json` configuration (used by some editor integrations):
+
+```json
+{
+ "servers": {
+  "image2imagelabs": {
+   "url": "http://0.0.0.0:8000/sse",
+   "type": "http"
+  }
+ },
+ "inputs": []
+}
+```
+
+Sample prompt you can use when calling the tool:
+
+```text
+Use the attached image and create a new one with a format like an anime from the 90s: bright cel-shaded colors, dramatic rim lighting, halftone accents, slightly exaggerated facial features, and subtle film grain; keep the subject's pose and expression recognizable.
+```
