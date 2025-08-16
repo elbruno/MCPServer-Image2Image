@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 import tempfile
 import traceback
+import sys
 
 load_dotenv()
 
@@ -135,4 +136,22 @@ def image2image(model: str = 'gpt', prompt: str | None = None, image_base64: str
 
 if __name__ == '__main__':
     # Run the MCP server. This will expose tools (like `image2image`) via MCP.
-    mcp.run()
+    try:
+        mcp.run()
+    except KeyboardInterrupt:
+        # When a user or environment interrupts the process (Ctrl+C), exit cleanly.
+        # Printing may fail if stdout/stderr were closed by the runtime, so guard it.
+        try:
+            print("MCP server interrupted by user. Shutting down.")
+        except Exception:
+            pass
+        sys.exit(0)
+    except Exception:
+        # Log unexpected exceptions and exit with a non-zero code so callers know it failed.
+        try:
+            print("MCP server encountered an unexpected exception:")
+            traceback.print_exc()
+        except Exception:
+            # If printing fails (streams closed), ensure we still exit with error
+            pass
+        sys.exit(1)
