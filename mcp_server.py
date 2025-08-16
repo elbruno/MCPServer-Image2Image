@@ -5,7 +5,7 @@ from io import BytesIO
 from datetime import datetime
 from PIL import Image
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, send_file
+from mcp.server.fastmcp import FastMCP
 import tempfile
 import traceback
 
@@ -18,7 +18,8 @@ FOUNDRY_API_VERSION = os.getenv("FOUNDRY_API_VERSION")
 FLUX_DEPLOYMENT_NAME = os.getenv("FLUX_DEPLOYMENT_NAME")
 GPT_DEPLOYMENT_NAME = os.getenv("GPT_DEPLOYMENT_NAME")
 
-app = Flask(__name__)
+# Create an MCP server
+mcp = FastMCP("Image2Image")
 
 
 def call_foundry_edit(image_path, prompt, model='gpt'):
@@ -90,61 +91,48 @@ def save_base64_to_file(b64_string):
     return tmp.name
 
 
-@app.route('/image2image', methods=['POST'])
-def image2image():
-    """MCP-style server endpoint.
+@mcp.tool()
+def image2image(model: str = 'gpt', prompt: str | None = None, image_base64: str | None = None, image_path: str | None = None) -> list:
+    """MCP tool that wraps the original /image2image Flask endpoint logic.
 
-    Expected JSON (application/json) or form data:
-      - model: 'gpt' or 'flux' (optional, default 'gpt')
-      - prompt: text prompt (optional, default pirate style)
+    Parameters:
+      - model: 'gpt' or 'flux' (default 'gpt')
+      - prompt: text prompt (default pirate style)
       - image_base64: base64-encoded image data OR
       - image_path: server-local path to an image file
 
-    Returns JSON with generated image paths.
+    Returns a list of generated image file paths.
     """
+    model = (model or 'gpt').lower()
+    prompt = prompt or "update this image to be set in a pirate era"
+
+    tmp_created = False
+    img_path = None
+
+    if image_base64:
+        img_path = save_base64_to_file(image_base64)
+        tmp_created = True
+    elif image_path:
+        candidate = os.path.expanduser(image_path)
+        if not os.path.isabs(candidate):
+            candidate = os.path.join(os.getcwd(), candidate)
+        if not os.path.isfile(candidate):
+            raise FileNotFoundError(f"image_path not found: {candidate}")
+        img_path = candidate
+    else:
+        raise ValueError("No image provided. Please provide 'image_base64' or 'image_path'.")
+
     try:
-        # Accept both JSON and form-encoded data
-        if request.is_json:
-            payload = request.get_json()
-        else:
-            payload = request.form.to_dict()
-
-        model = (payload.get('model') or 'gpt').lower()
-        prompt = payload.get('prompt') or "update this image to be set in a pirate era"
-
-        image_path = None
-        cleanup_tmp = False
-
-        if 'image_base64' in payload and payload.get('image_base64'):
-            image_path = save_base64_to_file(payload.get('image_base64'))
-            cleanup_tmp = True
-        elif 'image_path' in payload and payload.get('image_path'):
-            candidate = payload.get('image_path')
-            candidate = os.path.expanduser(candidate)
-            if not os.path.isabs(candidate):
-                candidate = os.path.join(os.getcwd(), candidate)
-            if not os.path.isfile(candidate):
-                return jsonify({'error': f"image_path not found: {candidate}"}), 400
-            image_path = candidate
-        else:
-            return jsonify({'error': "No image provided. Please provide 'image_base64' or 'image_path'."}), 400
-
-        saved = call_foundry_edit(image_path, prompt, model=model)
-
-        # cleanup temp file if one was created
-        if cleanup_tmp and image_path and os.path.exists(image_path):
+        saved = call_foundry_edit(img_path, prompt, model=model)
+        return saved
+    finally:
+        if tmp_created and img_path and os.path.exists(img_path):
             try:
-                os.unlink(image_path)
+                os.unlink(img_path)
             except Exception:
                 pass
 
-        return jsonify({'generated': saved})
-
-    except Exception as e:
-        tb = traceback.format_exc()
-        return jsonify({'error': str(e), 'trace': tb}), 500
-
 
 if __name__ == '__main__':
-    # Run a simple development server for local testing.
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Run the MCP server. This will expose tools (like `image2image`) via MCP.
+    mcp.run()
