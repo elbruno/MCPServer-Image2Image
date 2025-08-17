@@ -20,6 +20,9 @@ builder.Services.AddHttpClient("FoundryClient");
 builder.Services.Configure<FoundrySettings>(builder.Configuration.GetSection("FoundrySettings"));
 builder.Services.AddSingleton<IFoundryClient, FoundryClient>();
 
+// get azure storage blobs
+builder.AddAzureBlobServiceClient("genimageBlobs");
+
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
