@@ -5,6 +5,7 @@ using McpImage2ImageCs.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Net;
+using Microsoft.Extensions.Logging;
 
 [McpServerToolType]
 public static class ImageToImageTool
@@ -14,6 +15,7 @@ public static class ImageToImageTool
         IMcpServer thisServer,
         FoundryClient foundry,
         BlobContainerClient blobContainerClient,
+        ILogger<FoundryClient> logger,
         string model = "gpt",
         string? prompt = null,
         string? image_uri = null,
@@ -22,7 +24,7 @@ public static class ImageToImageTool
         model = (model ?? "gpt").ToLowerInvariant();
         prompt ??= "update this image to be set in a pirate era";
 
-        Console.Error.WriteLine($"[ImageToImageTool] model={model} prompt={(prompt.Length > 60 ? prompt[..60] + "..." : prompt)}");
+        logger.LogInformation("[ImageToImageTool] model={Model} prompt={Prompt}", model, prompt.Length > 60 ? prompt[..60] + "..." : prompt);
 
         // Generate temp file names
         var (tempFileNameOriginal, tempFileNameGenerated) = GenerateTempFileNames();
@@ -31,16 +33,16 @@ public static class ImageToImageTool
         await EnsureContainerAsync(blobContainerClient);
 
         // Download original image
-        var originalImageBytes = await DownloadImageBytesAsync(image_uri);
+        var originalImageBytes = await DownloadImageBytesAsync(image_uri, logger);
 
         // Upload original image
-        var blobUrlOriginal = await UploadBytesAsync(blobContainerClient, tempFileNameOriginal, originalImageBytes, "Original");
+        var blobUrlOriginal = await UploadBytesAsync(blobContainerClient, tempFileNameOriginal, originalImageBytes, "Original", logger);
 
         // Generate / edit the image
         var generatedImageBytes = await foundry.EditImageAsync(image_uri!, tempFileNameOriginal, prompt, model, cancellationToken);
 
         // Upload generated image
-        var blobUrlGenerated = await UploadBytesAsync(blobContainerClient, tempFileNameGenerated, generatedImageBytes, "Generated");
+        var blobUrlGenerated = await UploadBytesAsync(blobContainerClient, tempFileNameGenerated, generatedImageBytes, "Generated", logger);
 
         return new GeneratedImageResponse
         {
@@ -64,27 +66,27 @@ public static class ImageToImageTool
         await blobContainerClient.SetAccessPolicyAsync(PublicAccessType.Blob);
     }
 
-    private static async Task<byte[]> DownloadImageBytesAsync(string? imageUri)
+    private static async Task<byte[]> DownloadImageBytesAsync(string? imageUri, ILogger logger)
     {
         if (string.IsNullOrWhiteSpace(imageUri))
         {
             throw new ArgumentException("No image_uri provided. Please provide a valid image URI.");
         }
 
-        Console.Error.WriteLine($"[ImageToImageTool] Downloading image from URI: {imageUri}");
+        logger.LogInformation("[ImageToImageTool] Downloading image from URI: {Uri}", imageUri);
         using WebClient webClient = new();
         var bytes = await webClient.DownloadDataTaskAsync(imageUri);
-        Console.Error.WriteLine($"[ImageToImageTool] Downloaded image size: {bytes.Length} bytes");
+        logger.LogInformation("[ImageToImageTool] Downloaded image size: {Size} bytes", bytes.Length);
         return bytes;
     }
 
-    private static async Task<string> UploadBytesAsync(BlobContainerClient container, string blobName, byte[] bytes, string label)
+    private static async Task<string> UploadBytesAsync(BlobContainerClient container, string blobName, byte[] bytes, string label, ILogger logger)
     {
         var blobClient = container.GetBlobClient(blobName);
         using MemoryStream ms = new(bytes);
         await blobClient.UploadAsync(ms, overwrite: true);
         var url = blobClient.Uri.ToString();
-        Console.WriteLine($"[ImageToImageTool] Uploaded {label} image to blob storage: {url}");
+        logger.LogInformation("[ImageToImageTool] Uploaded {Label} image to blob storage: {Url}", label, url);
         return url;
     }
 }

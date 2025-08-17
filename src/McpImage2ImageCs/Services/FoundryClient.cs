@@ -12,7 +12,10 @@ public class FoundryClient
     private readonly FoundrySettings _settings;
     private readonly ILogger<FoundryClient> _logger;
 
-    public FoundryClient(IHttpClientFactory httpClientFactory, IOptions<FoundrySettings> settings, ILogger<FoundryClient> logger)
+    public FoundryClient(
+        IHttpClientFactory httpClientFactory, 
+        IOptions<FoundrySettings> settings, 
+        ILogger<FoundryClient> logger)
     {
         _httpClient = httpClientFactory.CreateClient("FoundryClient");
         _settings = settings.Value;
