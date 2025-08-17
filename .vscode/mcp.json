@@ -1,5 +1,9 @@
 {
 	"servers": {
+		"github": {
+			"type": "http",
+			"url": "https://api.githubcopilot.com/mcp/"
+		},
 		"image2imagePy": {
 			"url": "http://0.0.0.0:8000/sse",
 			"type": "http"
