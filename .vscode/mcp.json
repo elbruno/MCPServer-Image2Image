@@ -8,16 +8,16 @@
 			"url": "http://0.0.0.0:8000/sse",
 			"type": "http"
 		},
-		"imagetools": {
-			"command": "mcp",
-			"args": [
-				"run",
-				"${workspaceFolder}/mcp_server_image_tools.py",
-				"-t",
-				"stdio"
-			],
-			"type": "stdio"
-		},
+		// "imagetools": {
+		// 	"command": "mcp",
+		// 	"args": [
+		// 		"run",
+		// 		"${workspaceFolder}/mcp_server_image_tools.py",
+		// 		"-t",
+		// 		"stdio"
+		// 	],
+		// 	"type": "stdio"
+		// },
 		"image2imageCS": {
 			"url": "http://localhost:57011/sse",
 			"type": "http"
