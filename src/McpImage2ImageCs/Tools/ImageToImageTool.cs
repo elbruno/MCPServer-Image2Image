@@ -24,46 +24,23 @@ public static class ImageToImageTool
 
         Console.Error.WriteLine($"[ImageToImageTool] model={model} prompt={(prompt.Length > 60 ? prompt[..60] + "..." : prompt)}");
 
-        // generate a temporary file names using a guid and the .png extension
-        var tmpGuid = Guid.NewGuid().ToString();
-        var tempFileNameOriginal = Path.Combine(tmpGuid + "-original.png");
-        var tempFileNameGenerated = Path.Combine(tmpGuid + "-generated.png");
-        await blobContainerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
-        await blobContainerClient.SetAccessPolicyAsync(PublicAccessType.Blob);
-        var blobClient = blobContainerClient.GetBlobClient(tempFileNameOriginal);
+        // Generate temp file names
+        var (tempFileNameOriginal, tempFileNameGenerated) = GenerateTempFileNames();
 
-        // open a memory stream for the original image, and it's references using the uri
-        byte[] image_bytes;
-        if (!string.IsNullOrEmpty(image_uri))
-        {
-            // If image_uri is provided, download the image from the URI
-            Console.Error.WriteLine($"[ImageToImageTool] Downloading image from URI: {image_uri}");
-            using WebClient webClientOriginal = new WebClient();
-            image_bytes = await webClientOriginal.DownloadDataTaskAsync(image_uri);
-            Console.Error.WriteLine($"[ImageToImageTool] Downloaded image size: {image_bytes.Length} bytes");
-        }
-        else
-        {
-            // If no image_uri is provided, we expect the image to be passed as a byte array in the request body
-            throw new ArgumentException("No image_uri provided. Please provide a valid image URI.");
-        }
+        // Ensure container exists and is public
+        await EnsureContainerAsync(blobContainerClient);
 
-        using MemoryStream memoryStream = new(image_bytes);
-        await blobClient.UploadAsync(memoryStream);
+        // Download original image
+        var originalImageBytes = await DownloadImageBytesAsync(image_uri);
 
-        //get the original image blob URL
-        var blobUrlOriginal = blobClient.Uri.ToString();
-        Console.WriteLine($"[ImageToImageTool] Uploaded Original image to blob storage: {blobUrlOriginal}");
+        // Upload original image
+        var blobUrlOriginal = await UploadBytesAsync(blobContainerClient, tempFileNameOriginal, originalImageBytes, "Original");
 
-        // convert / generate the image
-        var foundryGeneratedImageBytes = await foundry.EditImageAsync(image_uri, tempFileNameOriginal, prompt, model, cancellationToken);
+        // Generate / edit the image
+        var generatedImageBytes = await foundry.EditImageAsync(image_uri!, tempFileNameOriginal, prompt, model, cancellationToken);
 
-        // open a memory stream for the generated image
-        using MemoryStream generatedImageStream = new(foundryGeneratedImageBytes);
-        var generatedBlobClient = blobContainerClient.GetBlobClient(tempFileNameGenerated);
-        await generatedBlobClient.UploadAsync(generatedImageStream);
-        var blobUrlGenerated = generatedBlobClient.Uri.ToString();
-        Console.WriteLine($"[ImageToImageTool] Uploaded Generated image to blob storage: {blobUrlGenerated}");
+        // Upload generated image
+        var blobUrlGenerated = await UploadBytesAsync(blobContainerClient, tempFileNameGenerated, generatedImageBytes, "Generated");
 
         return new GeneratedImageResponse
         {
@@ -71,5 +48,43 @@ public static class ImageToImageTool
             BlobOriginalImageUri = blobUrlOriginal,
             BlobGeneratedImageUri = blobUrlGenerated
         };
+    }
+
+    private static (string original, string generated) GenerateTempFileNames()
+    {
+        var tmpGuid = Guid.NewGuid().ToString();
+        var original = Path.Combine(tmpGuid + "-original.png");
+        var generated = Path.Combine(tmpGuid + "-generated.png");
+        return (original, generated);
+    }
+
+    private static async Task EnsureContainerAsync(BlobContainerClient blobContainerClient)
+    {
+        await blobContainerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+        await blobContainerClient.SetAccessPolicyAsync(PublicAccessType.Blob);
+    }
+
+    private static async Task<byte[]> DownloadImageBytesAsync(string? imageUri)
+    {
+        if (string.IsNullOrWhiteSpace(imageUri))
+        {
+            throw new ArgumentException("No image_uri provided. Please provide a valid image URI.");
+        }
+
+        Console.Error.WriteLine($"[ImageToImageTool] Downloading image from URI: {imageUri}");
+        using WebClient webClient = new();
+        var bytes = await webClient.DownloadDataTaskAsync(imageUri);
+        Console.Error.WriteLine($"[ImageToImageTool] Downloaded image size: {bytes.Length} bytes");
+        return bytes;
+    }
+
+    private static async Task<string> UploadBytesAsync(BlobContainerClient container, string blobName, byte[] bytes, string label)
+    {
+        var blobClient = container.GetBlobClient(blobName);
+        using MemoryStream ms = new(bytes);
+        await blobClient.UploadAsync(ms, overwrite: true);
+        var url = blobClient.Uri.ToString();
+        Console.WriteLine($"[ImageToImageTool] Uploaded {label} image to blob storage: {url}");
+        return url;
     }
 }
