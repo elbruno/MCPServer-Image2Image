@@ -1,5 +1,6 @@
 using McpImage2ImageCs.Settings;
 using Microsoft.Extensions.Options;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -22,7 +23,7 @@ public class FoundryClient
 
 
     public async Task<string> EditImageAsync(
-        MemoryStream imageMemoryStream,
+        string originalImageUri,
         string imageFileName,
         string prompt, 
         string model, 
@@ -65,8 +66,11 @@ public class FoundryClient
         //streamContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
         //content.Add(streamContent, "image", Path.GetFileName(imagePath));
 
+        using WebClient webClientOriginal = new WebClient();
+        var image_bytes = await webClientOriginal.DownloadDataTaskAsync(originalImageUri);
+        using var imageMemoryStream = new MemoryStream(image_bytes);
         var streamContent = new StreamContent(imageMemoryStream);
-        streamContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        streamContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
         content.Add(streamContent, "image", Path.GetFileName(imageFileName));
 
         using var request = new HttpRequestMessage(HttpMethod.Post, editUrl);

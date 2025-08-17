@@ -26,6 +26,7 @@ public static class ImageToImageTool
         var tmpGuid = Guid.NewGuid().ToString();
         var tempFileNameOriginal = Path.Combine(tmpGuid + "-original.png");
         var tempFileNameGenerated = Path.Combine(tmpGuid + "-generated.png");
+        await blobContainerClient.CreateIfNotExistsAsync();
         var blobClient = blobContainerClient.GetBlobClient(tempFileNameOriginal);
 
         // open a memory stream for the original image, and it's references using the uri
@@ -52,7 +53,7 @@ public static class ImageToImageTool
         Console.WriteLine($"[ImageToImageTool] Uploaded Original image to blob storage: {blobUrlOriginal}");
 
         // convert / generate the image
-        var foundryGeneratedImage = await foundry.EditImageAsync(memoryStream, tempFileNameOriginal, prompt, model, cancellationToken);
+        var foundryGeneratedImage = await foundry.EditImageAsync(image_uri, tempFileNameOriginal, prompt, model, cancellationToken);
         Console.WriteLine($"[ImageToImageTool] completed. Generated Image: {foundryGeneratedImage}");
 
         // open a memory stream for the generated image
