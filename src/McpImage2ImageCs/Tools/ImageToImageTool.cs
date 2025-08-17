@@ -1,4 +1,6 @@
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using McpImage2ImageCs.Models;
 using McpImage2ImageCs.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
@@ -8,7 +10,7 @@ using System.Net;
 public static class ImageToImageTool
 {
     [McpServerTool, Description("Converts or generates an image using a specific model ('gpt' by default or 'flux') and a prompt with the image conversion or generation options. The tool receives the image uri.")]
-    public static async Task<string> ConvertOrGenerateImage(
+    public static async Task<GeneratedImageResponse> ConvertOrGenerateImage(
         IMcpServer thisServer,
         FoundryClient foundry,
         BlobContainerClient blobContainerClient,
@@ -26,7 +28,8 @@ public static class ImageToImageTool
         var tmpGuid = Guid.NewGuid().ToString();
         var tempFileNameOriginal = Path.Combine(tmpGuid + "-original.png");
         var tempFileNameGenerated = Path.Combine(tmpGuid + "-generated.png");
-        await blobContainerClient.CreateIfNotExistsAsync();
+        await blobContainerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+        await blobContainerClient.SetAccessPolicyAsync(PublicAccessType.Blob);
         var blobClient = blobContainerClient.GetBlobClient(tempFileNameOriginal);
 
         // open a memory stream for the original image, and it's references using the uri
@@ -53,18 +56,20 @@ public static class ImageToImageTool
         Console.WriteLine($"[ImageToImageTool] Uploaded Original image to blob storage: {blobUrlOriginal}");
 
         // convert / generate the image
-        var foundryGeneratedImage = await foundry.EditImageAsync(image_uri, tempFileNameOriginal, prompt, model, cancellationToken);
-        Console.WriteLine($"[ImageToImageTool] completed. Generated Image: {foundryGeneratedImage}");
+        var foundryGeneratedImageBytes = await foundry.EditImageAsync(image_uri, tempFileNameOriginal, prompt, model, cancellationToken);
 
         // open a memory stream for the generated image
-        using WebClient webClientGenerated = new WebClient();
-        var generated_image_bytes = await webClientGenerated.DownloadDataTaskAsync(foundryGeneratedImage);
-        using MemoryStream generatedImageStream = new(generated_image_bytes);
+        using MemoryStream generatedImageStream = new(foundryGeneratedImageBytes);
         var generatedBlobClient = blobContainerClient.GetBlobClient(tempFileNameGenerated);
         await generatedBlobClient.UploadAsync(generatedImageStream);
         var blobUrlGenerated = generatedBlobClient.Uri.ToString();
         Console.WriteLine($"[ImageToImageTool] Uploaded Generated image to blob storage: {blobUrlGenerated}");
 
-        return blobUrlGenerated;
+        return new GeneratedImageResponse
+        {
+            OriginalImageUri = blobUrlOriginal,
+            BlobOriginalImageUri = blobUrlOriginal,
+            BlobGeneratedImageUri = blobUrlGenerated
+        };
     }
 }

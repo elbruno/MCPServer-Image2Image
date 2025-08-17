@@ -1,3 +1,4 @@
+using Google.Protobuf;
 using McpImage2ImageCs.Settings;
 using Microsoft.Extensions.Options;
 using System.Net;
@@ -19,17 +20,15 @@ public class FoundryClient
         _logger = logger;
     }
 
-    //public async Task<List<string>> EditImageAsync(string imagePath, string prompt, string model, CancellationToken cancellationToken = default)
-
-
-    public async Task<string> EditImageAsync(
+    public async Task<Byte[]> EditImageAsync(
         string originalImageUri,
         string imageFileName,
         string prompt, 
         string model, 
         CancellationToken cancellationToken = default)
-
     {
+        byte[] imageBytes = null;
+
         if (string.IsNullOrEmpty(_settings.FOUNDRY_ENDPOINT) || string.IsNullOrEmpty(_settings.FOUNDRY_API_KEY) || string.IsNullOrEmpty(_settings.FOUNDRY_API_VERSION))
         {
             throw new InvalidOperationException("Foundry settings are not configured. Please set FOUNDRY_ENDPOINT, FOUNDRY_API_KEY, and FOUNDRY_API_VERSION.");
@@ -61,11 +60,6 @@ public class FoundryClient
             content.Add(new StringContent("hd"), "quality");
         }
 
-        //var fileStream = File.OpenRead(imagePath);
-        //var streamContent = new StreamContent(fileStream);
-        //streamContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-        //content.Add(streamContent, "image", Path.GetFileName(imagePath));
-
         using WebClient webClientOriginal = new WebClient();
         var image_bytes = await webClientOriginal.DownloadDataTaskAsync(originalImageUri);
         using var imageMemoryStream = new MemoryStream(image_bytes);
@@ -91,11 +85,6 @@ public class FoundryClient
         using var jsonDoc = JsonDocument.Parse(respText);
         var root = jsonDoc.RootElement;
 
-        var outDir = _settings.GeneratedDir ?? Path.Combine(AppContext.BaseDirectory, "generated");
-        Directory.CreateDirectory(outDir);
-
-        var generatedImage = "";
-
         if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
         {
             int idx = 0;
@@ -115,18 +104,18 @@ public class FoundryClient
                     continue;
                 }
 
-                var bytes = Convert.FromBase64String(b64);
-                var filename = Path.Combine(outDir, $"{DateTime.Now:yyyyMMdd_HHmmss}_" + model + $"_{idx}.png");
-                await File.WriteAllBytesAsync(filename, bytes, cancellationToken);
-                _logger.LogInformation("Saved generated image: {File}", filename);
-                generatedImage = filename;
+                imageBytes = Convert.FromBase64String(b64);
+                //var filename = Path.Combine(outDir, $"{DateTime.Now:yyyyMMdd_HHmmss}_" + model + $"_{idx}.png");
+                //await File.WriteAllBytesAsync(filename, bytes, cancellationToken);
+                //_logger.LogInformation("Saved generated image: {File}", filename);
+                //generatedImage = filename;
             }
         }
         else
         {
             _logger.LogWarning("Foundry response did not contain expected 'data' array: {Root}", root.ToString());
-        }
+       }
 
-        return generatedImage;
+        return imageBytes; // Return null if no images were generated
     }
 }
