@@ -3,6 +3,10 @@
 		"image2imagelabs": {
 			"url": "http://0.0.0.0:8000/sse",
 			"type": "http"
+		},
+		"image2imageCS": {
+			"url": "http://localhost:57011/sse",
+			"type": "http"
 		}
 	},
 	"inputs": []

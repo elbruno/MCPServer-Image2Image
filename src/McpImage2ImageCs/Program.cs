@@ -1,16 +1,27 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using McpImage2ImageCs.Services;
+using McpImage2ImageCs.Settings;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
-// Configure all logs to go to stderr (stdout is used for the MCP protocol messages).
-builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
+// Configure all logs to go to stderr (stdout is used for the MCP protocol messages when using stdio).
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = Microsoft.Extensions.Logging.LogLevel.Trace);
 
-// Add the MCP services: the transport to use (stdio) and the tools to register.
+// Add the MCP services: use HTTP transport for web-hosted MCP server and register tools from this assembly
 builder.Services
     .AddMcpServer()
-    .WithStdioServerTransport()
-    .WithTools<RandomNumberTools>();
+    .WithHttpTransport()
+    .WithToolsFromAssembly();
 
-await builder.Build().RunAsync();
+// Register Foundry client and settings for image2image tool
+builder.Services.AddHttpClient("FoundryClient");
+// Bind FoundrySettings from the 'FoundrySettings' configuration section (e.g. appsettings.json)
+builder.Services.Configure<FoundrySettings>(builder.Configuration.GetSection("FoundrySettings"));
+builder.Services.AddSingleton<IFoundryClient, FoundryClient>();
+
+var app = builder.Build();
+
+// Map MCP endpoints
+app.MapMcp();
+
+app.Run();
