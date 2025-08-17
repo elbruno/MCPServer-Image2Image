@@ -1,3 +1,33 @@
+"""Image conversion tools for MCP (local shim compatible).
+
+This module provides two small utilities exposed as MCP tools:
+
+- `local_image_to_base64(image_path: str) -> str`:
+    Convert a local image file to a base64-encoded data URL string.
+
+- `base64_to_image(base64_string: str, output_path: str) -> str`:
+    Decode a base64 data URL or raw base64 string and write it to disk.
+
+Parameters and conventions used by the tool functions
+- image_path: path to an existing image file. Can be relative or absolute.
+    If relative, it is resolved against the current working directory.
+- base64_string: either a full data URL (e.g. "data:image/png;base64,...")
+    or a raw base64-encoded payload. The function will strip any leading
+    data URL header before decoding.
+- output_path: filesystem path where the decoded image will be written.
+    If not absolute, it will be resolved against the current working
+    directory. Parent directories will be created as needed.
+
+Return values
+- Both tools return strings. `local_image_to_base64` returns a data URL
+    string. `base64_to_image` returns the absolute path to the written file.
+
+Errors
+- Functions raise `ValueError` for missing required parameters and
+    `FileNotFoundError` when the input file cannot be found. Base64 decoding
+    errors will propagate as `binascii.Error` / `ValueError`.
+"""
+
 import os
 import base64
 import logging
@@ -54,8 +84,22 @@ def _save_base64_as_image(b64_string: str, out_path: Path) -> Path:
 
 
 @mcp.tool()
-def image_to_base64(image_path: str) -> str:
-    """Convert a local image file to a base64 data URL string."""
+def local_image_to_base64(image_path: str) -> str:
+    """Convert a local image file to a base64 data URL string.
+
+    Parameters
+    - image_path (str): Path to the image file to encode. May be absolute
+      or relative to the current working directory. Supported file suffixes
+      are recognized for setting the MIME type (e.g. .jpg/.jpeg -> image/jpeg,
+      .png -> image/png). Unknown suffixes will use application/octet-stream.
+
+    Returns
+    - str: A data URL string in the format 'data:<mime>;base64,<payload>'.
+
+    Raises
+    - ValueError: if `image_path` is falsy.
+    - FileNotFoundError: if the resolved path does not exist.
+    """
     if not image_path:
         raise ValueError("image_path must be provided")
     candidate = Path(image_path)
@@ -69,20 +113,33 @@ def image_to_base64(image_path: str) -> str:
 
 @mcp.tool()
 def base64_to_image(base64_string: str, output_path: str) -> str:
-    """Convert a base64 data URL or raw base64 string to an image file at output_path.
+        """Decode a base64 data URL or raw base64 payload and write an image file.
 
-    Returns the path to the written file as a string.
-    """
-    if not base64_string:
-        raise ValueError("base64_string must be provided")
-    if not output_path:
-        raise ValueError("output_path must be provided")
-    out = Path(output_path)
-    if not out.is_absolute():
-        out = Path.cwd() / out
-    saved = _save_base64_as_image(base64_string, out)
-    logger.info("Saved image from base64 to %s", saved)
-    return str(saved)
+        Parameters
+        - base64_string (str): Either a full data URL (e.g. 'data:image/png;base64,...')
+            or a raw base64 string. If a data URL header is present the header will be
+            stripped before decoding.
+        - output_path (str): Destination path for the decoded image. If a relative
+            path is provided it will be resolved against the current working directory.
+            Parent directories will be created if they do not exist.
+
+        Returns
+        - str: The absolute path to the file that was written as a string.
+
+        Raises
+        - ValueError: if either parameter is falsy.
+        - binascii.Error / ValueError: if the base64 payload is invalid.
+        """
+        if not base64_string:
+                raise ValueError("base64_string must be provided")
+        if not output_path:
+                raise ValueError("output_path must be provided")
+        out = Path(output_path)
+        if not out.is_absolute():
+                out = Path.cwd() / out
+        saved = _save_base64_as_image(base64_string, out)
+        logger.info("Saved image from base64 to %s", saved)
+        return str(saved)
 
 
 if __name__ == "__main__":
@@ -100,7 +157,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     if args.cmd == "to-base64":
-        print(image_to_base64(args.image_path))
+        print(local_image_to_base64(args.image_path))
     elif args.cmd == "from-base64":
         print(base64_to_image(args.base64_string, args.output_path))
     else:
