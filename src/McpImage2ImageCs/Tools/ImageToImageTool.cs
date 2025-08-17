@@ -1,20 +1,13 @@
 using System.ComponentModel;
 using ModelContextProtocol.Server;
 using McpImage2ImageCs.Services;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 [McpServerToolType]
-public static class Image2ImageTool
+public static class ImageToImageTool
 {
-    [McpServerTool, Description("Converts an image using Foundry (gpt or flux) and a prompt.")]
-    public static async Task<List<string>> Image2Image(
+    [McpServerTool, Description("Converts or generates an image using a specific model ('gpt' by default or 'flux') and a prompt with the image conversion or generation options.")]
+    public static async Task<List<string>> ConvertOrGenerateImage(
         IMcpServer thisServer,
-        ILogger logger,
         IFoundryClient foundry,
         string model = "gpt",
         string? prompt = null,
@@ -25,7 +18,7 @@ public static class Image2ImageTool
         model = (model ?? "gpt").ToLowerInvariant();
         prompt ??= "update this image to be set in a pirate era";
 
-        logger.LogInformation("image2image called with model={Model} prompt={Prompt} hasBase64={HasBase64} image_path={Path}", model, prompt, !string.IsNullOrEmpty(image_base64), image_path);
+        Console.Error.WriteLine($"[ImageToImageTool] model={model} prompt={(prompt.Length > 60 ? prompt[..60] + "..." : prompt)} hasBase64={!string.IsNullOrEmpty(image_base64)} image_path={image_path}");
 
         bool tmpCreated = false;
         string? imgPath = null;
@@ -41,14 +34,14 @@ public static class Image2ImageTool
                 await File.WriteAllBytesAsync(temp, bytes, cancellationToken);
                 imgPath = temp;
                 tmpCreated = true;
-                logger.LogInformation("Wrote temporary image file: {Temp}", temp);
+                Console.Error.WriteLine($"[ImageToImageTool] wrote temporary image file: {temp}");
             }
             else if (!string.IsNullOrEmpty(image_path))
             {
                 var candidate = Path.GetFullPath(image_path);
                 if (!File.Exists(candidate))
                 {
-                    logger.LogError("image_path not found: {Path}", candidate);
+                    Console.Error.WriteLine($"[ImageToImageTool] image_path not found: {candidate}");
                     throw new FileNotFoundException($"image_path not found: {candidate}");
                 }
 
@@ -56,12 +49,12 @@ public static class Image2ImageTool
             }
             else
             {
-                logger.LogError("No image provided to image2image tool");
+                Console.Error.WriteLine("[ImageToImageTool] No image provided to ImageToImageTool tool");
                 throw new ArgumentException("No image provided. Please provide 'image_base64' or 'image_path'.");
             }
 
             var saved = await foundry.EditImageAsync(imgPath!, prompt!, model, cancellationToken);
-            logger.LogInformation("image2image completed, {Count} files saved", saved.Count);
+            Console.Error.WriteLine($"[ImageToImageTool] completed, {saved.Count} files saved");
             return saved;
         }
         finally
@@ -71,11 +64,11 @@ public static class Image2ImageTool
                 try
                 {
                     File.Delete(imgPath);
-                    logger.LogDebug("Removed temporary file: {File}", imgPath);
+                    Console.Error.WriteLine($"[ImageToImageTool] removed temporary file: {imgPath}");
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Failed to remove temporary image file: {File}", imgPath);
+                    Console.Error.WriteLine($"[ImageToImageTool] failed to remove temporary image file {imgPath}: {ex.Message}");
                 }
             }
         }

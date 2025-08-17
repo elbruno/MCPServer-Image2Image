@@ -1,15 +1,7 @@
 using McpImage2ImageCs.Settings;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-// ImageSharp previously used for manipulation; currently not required for direct save
 
 namespace McpImage2ImageCs.Services;
 

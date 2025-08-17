@@ -15,7 +15,6 @@ builder.Services
 
 // Register Foundry client and settings for image2image tool
 builder.Services.AddHttpClient("FoundryClient");
-// Bind FoundrySettings from the 'FoundrySettings' configuration section (e.g. appsettings.json)
 builder.Services.Configure<FoundrySettings>(builder.Configuration.GetSection("FoundrySettings"));
 builder.Services.AddSingleton<IFoundryClient, FoundryClient>();
 
