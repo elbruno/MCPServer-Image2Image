@@ -3,6 +3,8 @@ using McpImage2ImageCs.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 // Configure all logs to go to stderr (stdout is used for the MCP protocol messages when using stdio).
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = Microsoft.Extensions.Logging.LogLevel.Trace);
@@ -19,6 +21,8 @@ builder.Services.Configure<FoundrySettings>(builder.Configuration.GetSection("Fo
 builder.Services.AddSingleton<IFoundryClient, FoundryClient>();
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 // Map MCP endpoints
 app.MapMcp();

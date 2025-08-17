@@ -7,6 +7,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpImage2ImageCs", "McpImag
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpImage2ImageCs.Tests", "McpImage2ImageCs.Tests\McpImage2ImageCs.Tests.csproj", "{F512EC8D-B70B-0C54-8380-85D394FF7835}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpImage2ImageCs.AppHost", "McpImage2ImageCs.AppHost\McpImage2ImageCs.AppHost.csproj", "{1602F06C-14CA-46BB-B32E-1D5DFA2CF2EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpImage2ImageCs.ServiceDefaults", "McpImage2ImageCs.ServiceDefaults\McpImage2ImageCs.ServiceDefaults.csproj", "{88B38CE5-271E-930D-B40F-15865C559161}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1 Aspire", "1 Aspire", "{2597F6CA-02C0-4AFA-B2F6-C8BF4BE3B5FD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2 Image to Image", "2 Image to Image", "{31CC3D80-8916-4B30-994F-24CA13E921C0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3 Tests", "3 Tests", "{01CF8313-8AFB-4B8B-962E-E600CA635E63}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +31,23 @@ Global
 		{F512EC8D-B70B-0C54-8380-85D394FF7835}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F512EC8D-B70B-0C54-8380-85D394FF7835}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F512EC8D-B70B-0C54-8380-85D394FF7835}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1602F06C-14CA-46BB-B32E-1D5DFA2CF2EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1602F06C-14CA-46BB-B32E-1D5DFA2CF2EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1602F06C-14CA-46BB-B32E-1D5DFA2CF2EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1602F06C-14CA-46BB-B32E-1D5DFA2CF2EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88B38CE5-271E-930D-B40F-15865C559161}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88B38CE5-271E-930D-B40F-15865C559161}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88B38CE5-271E-930D-B40F-15865C559161}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88B38CE5-271E-930D-B40F-15865C559161}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E98A565C-3FC1-85DF-0F9A-06A3A0C6F143} = {31CC3D80-8916-4B30-994F-24CA13E921C0}
+		{F512EC8D-B70B-0C54-8380-85D394FF7835} = {01CF8313-8AFB-4B8B-962E-E600CA635E63}
+		{1602F06C-14CA-46BB-B32E-1D5DFA2CF2EC} = {2597F6CA-02C0-4AFA-B2F6-C8BF4BE3B5FD}
+		{88B38CE5-271E-930D-B40F-15865C559161} = {2597F6CA-02C0-4AFA-B2F6-C8BF4BE3B5FD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {43D983A2-4A09-4D24-B121-5D950CE7F177}
