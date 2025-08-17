@@ -7,21 +7,22 @@ using System.IO;
 [McpServerToolType]
 public static class ImageToImageTool
 {
-    [McpServerTool, Description("Converts or generates an image using a specific model ('gpt' by default or 'flux') and a prompt with the image conversion or generation options. The tool receives an images in base64 string.")]
+    [McpServerTool, Description("Converts or generates an image using a specific model ('gpt' by default or 'flux') and a prompt with the image conversion or generation options. The tool receives the content of an image in a byte array. The image is always a jpeg format")]
     public static async Task<string> ConvertOrGenerateImage(
         IMcpServer thisServer,
         FoundryClient foundry,
         BlobContainerClient blobContainerClient,
         string model = "gpt",
         string? prompt = null,
-        string? image_base64 = null,
+        byte[]? image_bytes = null,
+        //string? image_base64 = null,
         //string? image_path = null,
         CancellationToken cancellationToken = default)
     {
         model = (model ?? "gpt").ToLowerInvariant();
         prompt ??= "update this image to be set in a pirate era";
 
-        Console.Error.WriteLine($"[ImageToImageTool] model={model} prompt={(prompt.Length > 60 ? prompt[..60] + "..." : prompt)} hasBase64={!string.IsNullOrEmpty(image_base64)} ");
+        Console.Error.WriteLine($"[ImageToImageTool] model={model} prompt={(prompt.Length > 60 ? prompt[..60] + "..." : prompt)}");
 
         // generate a temporary file names using a guid and the .png extension
         var tmpGuid = Guid.NewGuid().ToString();
@@ -30,11 +31,11 @@ public static class ImageToImageTool
         var blobClient = blobContainerClient.GetBlobClient(tempFileNameOriginal);
 
         // convert the original image64string to a byte array
-        var comma = image_base64.IndexOf(',');
-        var b64 = comma >= 0 ? image_base64[(comma + 1)..] : image_base64;
-        var bytes = Convert.FromBase64String(b64);
+        //var comma = image_base64.IndexOf(',');
+        //var b64 = comma >= 0 ? image_base64[(comma + 1)..] : image_base64;
+        //var bytes = Convert.FromBase64String(b64);
 
-        using MemoryStream memoryStream = new(bytes);
+        using MemoryStream memoryStream = new(image_bytes);
         await blobClient.UploadAsync(memoryStream);
 
         //get the original image blob URL

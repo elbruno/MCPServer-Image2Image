@@ -33,6 +33,7 @@ import base64
 import logging
 from pathlib import Path
 from typing import Optional
+import io
 
 # FastMCP shim for local use if real package is not installed
 try:
@@ -84,7 +85,7 @@ def _save_base64_as_image(b64_string: str, out_path: Path) -> Path:
 
 
 @mcp.tool()
-def local_image_to_base64(image_path: str) -> str:
+def convert_local_image_to_base64(image_path: str) -> str:
     """Convert a local image file to a base64 data URL string.
 
     Parameters
@@ -109,6 +110,57 @@ def local_image_to_base64(image_path: str) -> str:
         raise FileNotFoundError(f"image_path not found: {candidate}")
     logger.info("Converting image to base64: %s", candidate)
     return _read_image_as_base64(candidate)
+
+
+@mcp.tool()
+def convert_local_image_to_bytes(image_path: str, convert_to_jpg: bool = True) -> bytes:
+    """Read an image file and return its bytes.
+
+    Parameters
+    - image_path (str): Path to the image file to read. May be absolute or relative.
+    - convert_to_jpg (bool): If True (default) convert the image to JPEG first
+      and return the JPEG bytes. If False, return the raw file bytes.
+
+    Returns
+    - bytes: The image data as a bytes object (JPEG bytes if convert_to_jpg=True).
+
+    Raises
+    - ValueError: if image_path is falsy.
+    - FileNotFoundError: if the resolved path does not exist.
+    - RuntimeError: if Pillow is required for conversion but not installed.
+    """
+    if not image_path:
+        raise ValueError("image_path must be provided")
+    candidate = Path(image_path)
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    if not candidate.exists():
+        raise FileNotFoundError(f"image_path not found: {candidate}")
+
+    logger.info("Reading image file as bytes: %s (convert_to_jpg=%s)", candidate, convert_to_jpg)
+
+    # If no conversion requested, return raw bytes from disk
+    if not convert_to_jpg:
+        return candidate.read_bytes()
+
+    # Conversion requested: use Pillow to open and re-encode as JPEG
+    try:
+        from PIL import Image
+    except Exception as exc:
+        raise RuntimeError("Pillow (PIL) is required to convert images to JPEG. Install with 'pip install Pillow'") from exc
+
+    with Image.open(candidate) as img:
+        # Convert to RGB for JPEG if image has alpha or palette
+        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+            bg = Image.new("RGB", img.size, (255, 255, 255))
+            bg.paste(img, mask=img.split()[-1])
+            img = bg
+        else:
+            img = img.convert("RGB")
+
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=95)
+        return buf.getvalue()
 
 
 @mcp.tool()
